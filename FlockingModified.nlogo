@@ -7,6 +7,7 @@ turtles-own [
 globals
 [i
 currentId
+  max-id
 ]
 to setup
   clear-all
@@ -144,19 +145,27 @@ to detect-swarm
 
   ;;update id thanks to the links
   ask turtles [
+
+    if id < 0
+    [
     let myInLinkNeighbors in-link-neighbors
     ask myInLinkNeighbors
     [
-      if id < 0
-      [set id currentId ]
+
+      set id currentId
+
 
     ]
-    set currentId currentId + 1
+      set id currentId
+      set currentId currentId + 1]
+
+
+
   ]
 
   ;;color turtles thanks to Id
   let turtle-with-max-id max-one-of turtles [id]
-  let max-id [id] of turtle-with-max-id
+  set max-id [id] of turtle-with-max-id
 
   ask turtles [
     print( max-id )
@@ -358,7 +367,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot i"
+"default" 1.0 0 -16777216 true "" "plot max-id"
 
 @#$#@#$#@
 ## WHAT IS IT?
