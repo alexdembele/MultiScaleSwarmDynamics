@@ -1,3 +1,5 @@
+breed [centroid centroids]
+
 turtles-own [
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
@@ -31,7 +33,11 @@ to go
   set i 0]
 
   detect-swarm
-
+  create-centroid 1[
+      set color red
+      set size 2
+      setxy centroid-x centroid-y
+    ]
   tick
 end
 
@@ -115,14 +121,25 @@ end
 
 to detect-swarm
   ask turtles [
-    let Neigh other turtles in-radius distanceSwarm ; ajustez le rayon selon vos besoins
-    ask Neigh [
-      create-link-with myself ; créez un lien entre l'agent en cours et chaque voisin
-
+    ask other turtles in-radius distanceSwarm [
+      if (heading > [heading] of myself - deltaDirection) and (heading < [heading] of myself + deltaDirection) [create-link-with myself] ; créez un lien entre l'agent en cours et chaque voisin
     ]
   ]
 end
 
+to-report centroid-x ;; for now it is the mean x and the mean y coordinates
+  ask turtles [
+     let x-component mean [xcor] of in-link-neighbors
+     report x-component
+  ]
+end
+
+to-report centroid-y ;; for now it is the mean x and the mean y coordinates
+  ask turtles [
+     let y-component mean [ycor] of in-link-neighbors
+     report y-component
+  ]
+end
 
 
 
@@ -312,6 +329,21 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot i"
+
+SLIDER
+6
+321
+233
+354
+deltaDirection
+deltaDirection
+1
+40
+30.0
+0.5
+1
+degrees
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -700,7 +732,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.4.0
+NetLogo 6.3.0
 @#$#@#$#@
 set population 200
 setup
