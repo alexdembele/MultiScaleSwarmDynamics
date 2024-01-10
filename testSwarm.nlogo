@@ -52,10 +52,21 @@ to go
     facexy globx globy
 
     let dist distancexy globx globy
+
+
+
     set vx vx + (1 - 0.3) * alpha * (random-float 0.1) * dist * dx
     set vy vy + (1 - 0.3) * alpha * (random-float 0.1) * dist * dy
 
+
+
+
+
+
+
     ; same speed is not enough, to form swarm, they need to go to a pseudo center of swarm
+
+
     ;set vx  vx + 0.3 * avg-vx + Alpha * random-normal 0 0.5
     ;set vy  vy + 0.3 * avg-vy + Alpha * random-normal 0 0.5
 
@@ -68,7 +79,6 @@ to go
   update-barycentre
   tick
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -141,6 +151,24 @@ Alpha
 1
 0
 Number
+
+PLOT
+776
+117
+976
+267
+plot 1
+NIL
+NIL
+0.0
+1.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot mean [vx] of turtles"
 
 @#$#@#$#@
 ## WHAT IS IT?
