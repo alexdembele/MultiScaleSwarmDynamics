@@ -30,13 +30,17 @@ to go
   ifelse i < 5
   [set i i + 1]
   [clear-links
+
   set i 0]
 
   detect-swarm
+
+  ;; too much centroids and they do not follow their flock...
   create-centroid 1[
+      set shape "circle"
       set color red
       set size 2
-      setxy centroid-x centroid-y
+      setxy mean-x mean-y
     ]
   tick
 end
@@ -127,18 +131,18 @@ to detect-swarm
   ]
 end
 
-to-report centroid-x ;; for now it is the mean x and the mean y coordinates
-  ask turtles [
-     let x-component mean [xcor] of in-link-neighbors
+to-report mean-x ;; for now it is the mean x and the mean y coordinates
+     let x-component 0
+     if count in-link-neighbors > 0
+       [set x-component mean [xcor] of in-link-neighbors]
      report x-component
-  ]
 end
 
-to-report centroid-y ;; for now it is the mean x and the mean y coordinates
-  ask turtles [
-     let y-component mean [ycor] of in-link-neighbors
+to-report mean-y ;; for now it is the mean x and the mean y coordinates
+     let y-component 0
+     if count in-link-neighbors > 0
+       [set y-component mean [ycor] of in-link-neighbors]
      report y-component
-  ]
 end
 
 
