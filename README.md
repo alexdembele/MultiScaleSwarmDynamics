@@ -1,7 +1,7 @@
 # MultiScaleSwarmDynamics
 
 
- NetLogo example: Flocking/
+ NetLogo example: Flocking/  
                  Swarm optimization  
   
 
