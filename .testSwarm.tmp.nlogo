@@ -6,31 +6,69 @@ turtles-own
 
 ]
 
+globals [
+  barycentre  ; Agent qui représente le barycentre
+]
+
+
+
 to setup
     clear-all
     create-turtles 100
     [
-      setxy random-xcor random-ycor
+      setxy random-xcor / 4 random-ycor / 4
       set vx random-normal 0 1
       set vy random-normal 0 1
       set color yellow
 
     ]
+
+  create-turtles 1 [
+  set shape "circle"  ; Forme pour représenter le barycentre
+  set color red
+  set size 3  ; Taille du cercle pour le barycentre
+  set barycentre self  ; Vous pouvez également attribuer un identifiant ou un nom pour référence ultérieure
+]
   reset-ticks
 end
 
+to update-barycentre
+  if any? turtles [
+    let avg-x mean [xcor] of turtles
+    let avg-y mean [ycor] of turtles
+    ask barycentre [
+      setxy avg-x avg-y
+    ]
+  ]
+end
+
 to go
+  let avg-vx mean [vx] of turtles
+  let avg-vy mean [vy] of turtles
+  let globx mean [xcor] of turtles
+  let globy mean [ycor] of turtles
+  ask turtles
+  [
+    facexy globx globy
+
+    let dist distancexy globx globy
+
+    set vx vx + (1 - 0.3) * alpha * (random-float 0.1) * dist * dx
+    set vy vy + (1 - 0.3) * alpha * (random-float 0.1) * dist * dy
+
+    ; same speed is not enough, to form swarm, they need to go to a pseudo center of swarm
+    ;set vx  vx + 0.3 * avg-vx + Alpha * random-normal 0 0.5
+    ;set vy  vy + 0.3 * avg-vy + Alpha * random-normal 0 0.5
 
   ; face in the direction of my velocity
     facexy (xcor + vx) (ycor + vy)
     ; and move forward by the magnitude of my velocity
     forward sqrt (vx * vx + vy * vy)
+  ]
 
+  update-barycentre
   tick
 end
-
-
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -92,6 +130,17 @@ NIL
 NIL
 NIL
 1
+
+INPUTBOX
+26
+205
+181
+265
+Alpha
+1.0
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?
