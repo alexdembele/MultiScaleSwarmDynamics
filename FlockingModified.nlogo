@@ -2,6 +2,7 @@ turtles-own [
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
   id                 ;; identity of the swarm the turtle belongs to
+
 ]
 
 globals
@@ -148,7 +149,9 @@ to detect-swarm
 
     if id < 0
     [
-    let myInLinkNeighbors in-link-neighbors
+
+      let  myInLinkNeighbors in-link-neighbors
+
     ask myInLinkNeighbors
     [
 
@@ -176,6 +179,8 @@ to detect-swarm
 
 
 end
+
+
 
 
 
