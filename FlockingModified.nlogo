@@ -1,17 +1,26 @@
 turtles-own [
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
+  id                 ;; identity of the swarm the turtle belongs to
 ]
+
 globals
-[i]
+[i
+currentId
+]
 to setup
   clear-all
   create-turtles population
     [ set color yellow - 2 + random 7  ;; random shades look nice
       set size 1.5  ;; easier to see
       setxy random-xcor random-ycor
-      set flockmates no-turtles ]
+      set flockmates no-turtles
+      set id -1
+  ]
+  ask patches [ set pcolor white ]
   set i 0
+  set currentId 1
+
   reset-ticks
 end
 
@@ -25,12 +34,21 @@ to go
   ;; animation, substitute the following line instead:
   ;;   ask turtles [ fd 1 ]
 
+  ;Detection des swarms sur un nombre de step distincts
   ifelse i < 5
   [set i i + 1]
-  [clear-links
+  [clear-links ;clear all the swarm identifier to recompute the swarm detection
+   ask turtles [ set id -1 ];
+   set currentId 1
   set i 0]
 
-  detect-swarm
+  detect-swarm; swarm detection
+
+
+
+
+
+
 
   tick
 end
@@ -114,14 +132,43 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
 end
 
 to detect-swarm
+  ;;create links between turtles based on a distance
   ask turtles [
     let Neigh other turtles in-radius distanceSwarm ; ajustez le rayon selon vos besoins
     ask Neigh [
       create-link-with myself ; créez un lien entre l'agent en cours et chaque voisin
 
+
     ]
   ]
+
+  ;;update id thanks to the links
+  ask turtles [
+    let myInLinkNeighbors in-link-neighbors
+    ask myInLinkNeighbors
+    [
+      if id < 0
+      [set id currentId ]
+
+    ]
+    set currentId currentId + 1
+  ]
+
+  ;;color turtles thanks to Id
+  let turtle-with-max-id max-one-of turtles [id]
+  let max-id [id] of turtle-with-max-id
+
+  ask turtles [
+    print( max-id )
+    set color (rgb 0 0 floor (255 * id / max-id  ))
+  ]
+
+
+
+
 end
+
+
 
 
 
