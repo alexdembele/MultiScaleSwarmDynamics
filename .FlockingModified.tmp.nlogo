@@ -27,7 +27,7 @@ to go
 
   ifelse i < 5
   [set i i + 1]
-  [clear-link
+  [clear-links
   set i 0]
 
   detect-swarm
@@ -118,6 +118,7 @@ to detect-swarm
     let Neigh other turtles in-radius distanceSwarm ; ajustez le rayon selon vos besoins
     ask Neigh [
       create-link-with myself ; créez un lien entre l'agent en cours et chaque voisin
+
 
     ]
   ]
