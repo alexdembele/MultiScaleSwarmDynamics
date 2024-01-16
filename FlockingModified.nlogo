@@ -3,12 +3,15 @@ turtles-own [
   nearest-neighbor   ;; closest one of our flockmates
   id                 ;; identity of the swarm the turtle belongs to
 
+
 ]
 
 globals
 [i
 currentId
   max-id
+  nbId
+  uniqueIdsSet
 ]
 to setup
   clear-all
@@ -18,6 +21,7 @@ to setup
       setxy random-xcor random-ycor
       set flockmates no-turtles
       set id -1
+
   ]
   ask patches [ set pcolor white ]
   set i 0
@@ -45,7 +49,8 @@ to go
   set i 0
     detect-swarm];swarm detection
 
-
+  count-unique-ids
+  calculate-centroid
 
 
 
@@ -203,6 +208,40 @@ to detect-swarm
 
 
 end
+
+to count-unique-ids
+  set uniqueIdsSet (list)
+  ask turtles [
+    if not member? id uniqueIdsSet [
+      set uniqueIdsSet fput id uniqueIdsSet
+    ]
+  ]
+  set nbId length uniqueIdsSet
+end
+
+to calculate-centroid
+
+  foreach uniqueIdsSet [
+    x -> let curId x;
+    let avgx mean [xcor] of turtles with [id = curId]
+    let avgy mean [ycor] of turtles with [id = curId]
+
+
+
+    create-turtles 1 [
+      set shape "circle"
+      set color red
+      set size 1  ;
+
+
+      setxy avgx avgy ; Mettez à jour les coordonnées x et y du nouveau cercle
+    ]
+  ]
+
+
+end
+
+
 
 
 
@@ -396,7 +435,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot max-id"
+"default" 1.0 0 -16777216 true "" "plot nbId"
 
 SLIDER
 35
@@ -407,7 +446,7 @@ deltaDirection
 deltaDirection
 0
 20
-1.0
+5.0
 1
 1
 NIL
