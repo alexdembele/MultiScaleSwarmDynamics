@@ -42,9 +42,10 @@ to go
   [clear-links ;clear all the swarm identifier to recompute the swarm detection
    ask turtles [ set id -1 ];
    set currentId 1
-  set i 0]
+  set i 0
+    detect-swarm];swarm detection
 
-  detect-swarm; swarm detection
+
 
 
 
@@ -134,44 +135,67 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
 end
 
 to detect-swarm
+  ask turtles[
   ;;create links between turtles based on a distance
-  ask turtles [
-    let Neigh other turtles in-radius distanceSwarm ; ajustez le rayon selon vos besoins
-    ask Neigh [
-      create-link-with myself ; créez un lien entre l'agent en cours et chaque voisin
-
-
+  ask other turtles in-radius distanceSwarm [
+      if (heading > [heading] of myself - deltaDirection) and (heading < [heading] of myself + deltaDirection) [create-link-with myself] ; créez un lien entre l'agent en cours et chaque voisin
     ]
   ]
 
   ;;update id thanks to the links
-  ask turtles [
+;  ask turtles [
+;
+;    if id < 0
+;    [
+;
+;      let  myInLinkNeighbors in-link-neighbors
+;
+;    ask myInLinkNeighbors
+;    [
+;      if id < 0
+;        [set id currentId]
+;
+;
+;
+;    ]
+;      set id currentId
+;      set currentId currentId + 1]
+;
+;  ]
 
-    if id < 0
-    [
-
-      let  myInLinkNeighbors in-link-neighbors
-
-    ask myInLinkNeighbors
-    [
-
-      set id currentId
-
-
-    ]
-      set id currentId
-      set currentId currentId + 1]
-
-
+  ask turtles
+  [
+    set id currentId
+    set currentId currentId + 1
 
   ]
+  let y 0
+  repeat 100
+  [
+    print(y)
+    set y y + 1
+    ask turtles
+    [
+      let  myInLinkNeighbors in-link-neighbors
+      let my-id id
+      ask myInLinkNeighbors[
+        let N-id id
+        let min-id min list my-id N-id
+        set id min-id
+      ]
+    ]
+  ]
+
+
+
+
 
   ;;color turtles thanks to Id
   let turtle-with-max-id max-one-of turtles [id]
   set max-id [id] of turtle-with-max-id
 
   ask turtles [
-    print( max-id )
+
     set color (rgb 0 0 floor (255 * id / max-id  ))
   ]
 
@@ -350,7 +374,7 @@ distanceSwarm
 distanceSwarm
 0
 10
-3.0
+4.0
 1
 1
 NIL
@@ -373,6 +397,21 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot max-id"
+
+SLIDER
+35
+415
+207
+448
+deltaDirection
+deltaDirection
+0
+20
+1.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
