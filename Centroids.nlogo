@@ -3,9 +3,10 @@ extensions [ls]
 to setup
   ls:reset
   ca
-  ls:create-interactive-models number_worlds "FlockingModified.nlogo"
+  ls:create-models number_worlds "FlockingModified.nlogo"
   ls:ask ls:models [ setup ]
   reset-ticks
+  print("ticks supposedly reset")
 end
 
 to go
@@ -16,22 +17,14 @@ to go
   let y_centroids [ListYCentroids] ls:of ls:models
   let heading_centroids [ListHeadingCentroids] ls:of ls:models
   ;;show [ centroids ] ls:of ls:models
-  foreach number_centroids[
-    i -> let number_centroid i
-    create-turtles number_centroid [
-      set color 15 + 10 * random 100
-      setxy random-xcor random-ycor
-    ]
-  ]
-  foreach ls:models[
-    i -> let id_world i
+  let models ls:models
+  while [not empty? models] [
+    let id_world last models
     let number_centroid item id_world number_centroids
     let xcoords item id_world x_centroids
     let ycoords item id_world y_centroids
     let headings item id_world heading_centroids
-    loop [
-      ;note that this idiotic language executes the block BEFORE the stop cond
-      if number_centroid = 1 [stop]
+    while[number_centroid > 0] [
       create-turtles 1 [
         set color 15 + 10 * id_world
         setxy last xcoords last ycoords
@@ -43,6 +36,8 @@ to go
       set headings but-last headings
       set number_centroid number_centroid - 1
     ]
+    set models but-last models
+    print(models)
   ]
   tick
 end
@@ -106,7 +101,7 @@ NIL
 NIL
 NIL
 NIL
-1
+0
 
 INPUTBOX
 22
@@ -478,7 +473,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.3.0
+NetLogo 6.4.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
