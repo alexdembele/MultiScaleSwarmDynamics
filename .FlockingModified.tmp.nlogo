@@ -86,11 +86,10 @@ end
 
 to find-flockmates  ;; turtle procedure
   set flockmates other turtles in-radius vision
-
 end
 
 to find-nearest-neighbor ;; turtle procedure
-  set nearest-neighbor min-one-of flockmates [distance myself]
+  set nearest-neighbor min-one-of flockmate [distance myself]
 end
 
 ;;; SEPARATE
