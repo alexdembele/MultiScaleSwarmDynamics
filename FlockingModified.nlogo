@@ -9,7 +9,13 @@ turtles-own [
 
 ]
 
-centroids-own[idcentroid]
+centroids-own[idcentroid
+flockmates-centroids
+nearest-neighbor-centroids
+id-centroids
+headcommand
+heading-centroids
+]
 
 globals
 [i
@@ -56,11 +62,16 @@ to go
    set currentId 1
   set i 0
     detect-swarm
-
+    color-swarm
    ];swarm detection
 
   count-unique-ids
+
   calculate-centroid
+  let c count centroids
+  print(c)
+
+  ;ask turtles with[member? self centroids] [; flock modified]
 
 
 
@@ -71,6 +82,22 @@ to go
   tick
 end
 
+;;;
+to flock-centroids
+  find-flockmates-centroids
+  if any? flockmates-centroids
+  [
+    find-nearest-neighbor-centroids
+    ifelse nearest-neighbor-centroids < minimum-separation-centroids
+    [separate-centroids]
+    [align-centroids
+     cohere-centroids]
+    set headcommand heading
+  ]
+end
+
+
+;;;
 to flock  ;; turtle procedure
   find-flockmates
 
@@ -81,28 +108,53 @@ to flock  ;; turtle procedure
       ifelse distance nearest-neighbor < minimum-separation
         [ separate ]
         [ align
-          cohere ] ]
+          cohere
+          centroidcommand ] ]
 end
+;;;
+to find-flockmates-centroids  ;; turtle procedure
+  set flockmates-centroids other centroids in-radius vision-centroids
 
+end
+;;;
 to find-flockmates  ;; turtle procedure
   set flockmates other turtles in-radius vision
 
 end
+;;;
+to find-nearest-neighbor-centroids
+  set nearest-neighbor-centroids min-one-of flockmates-centroids [distance myself]
+end
+;;;
 
 to find-nearest-neighbor ;; turtle procedure
   set nearest-neighbor min-one-of flockmates [distance myself]
 end
+;;; CENTROID COMMAND
+to centroidcommand
+  let my-id id
+  let my-centroid centroids with[id-centroids = my-id]
+  if any? my-centroid
+
+  [turn-towards  [headcommand] of my-centroid max-centroid-command]
+end
+
 
 ;;; SEPARATE
 
+to separate-centroids
+  turn-away ([heading] of nearest-neighbor-centroids) max-separate-turn-centroids
+end
 to separate  ;; turtle procedure
   turn-away ([heading] of nearest-neighbor) max-separate-turn
 end
 
 ;;; ALIGN
-
+to align-centroids  ;; turtle procedure
+  turn-towards average-flockmate-heading-centroids max-align-turn-centroids
+end
 to align  ;; turtle procedure
-  turn-towards average-flockmate-heading max-align-turn
+  turn-towards average-flockmate-heading max-align-turn ; + separate (swarm)  + align (swarm) * weight
 end
 
 to-report average-flockmate-heading  ;; turtle procedure
@@ -116,10 +168,25 @@ to-report average-flockmate-heading  ;; turtle procedure
     [ report atan x-component y-component ]
 end
 
+to-report average-flockmate-heading-centroids  ;; turtle procedure
+
+
+  let x-component-centroids sum [dx] of flockmates-centroids
+  let y-component-centroids sum [dy] of flockmates-centroids
+  ifelse x-component-centroids = 0 and y-component-centroids = 0
+    [ report heading ]
+    [ report atan x-component-centroids y-component-centroids ]
+end
+
+
+
 ;;; COHERE
 
+to cohere-centroids  ;; turtle procedure
+  turn-towards average-heading-towards-flockmates-centroids max-cohere-turn-centroids
+end
 to cohere  ;; turtle procedure
-  turn-towards average-heading-towards-flockmates max-cohere-turn
+  turn-towards average-heading-towards-flockmates max-cohere-turn; + cohere swarm * weight
 end
 
 to-report average-heading-towards-flockmates  ;; turtle procedure
@@ -128,6 +195,16 @@ to-report average-heading-towards-flockmates  ;; turtle procedure
   ;; so we add 180
   let x-component mean [sin (towards myself + 180)] of flockmates
   let y-component mean [cos (towards myself + 180)] of flockmates
+  ifelse x-component = 0 and y-component = 0
+    [ report heading ]
+    [ report atan x-component y-component ]
+end
+
+to-report average-heading-towards-flockmates-centroids
+
+
+  let x-component mean [sin (towards myself + 180)] of flockmates-centroids
+  let y-component mean [cos (towards myself + 180)] of flockmates-centroids
   ifelse x-component = 0 and y-component = 0
     [ report heading ]
     [ report atan x-component y-component ]
@@ -188,7 +265,6 @@ to detect-swarm
     set currentId currentId + 1
 
   ]
-  let y 0
   repeat 100
   [
 
@@ -210,13 +286,13 @@ to detect-swarm
 
 
   ;;color turtles thanks to Id
-  let turtle-with-max-id max-one-of turtles [id]
-  set max-id [id] of turtle-with-max-id
-
-  ask turtles [
-
-    set color (rgb 0 0 floor (255 * id / max-id  ))
-  ]
+;  let turtle-with-max-id max-one-of turtles [id]
+;  set max-id [id] of turtle-with-max-id
+;
+;  ask turtles [
+;
+;    set color (rgb 0 0 floor (255 * id / max-id  ))
+;  ]
 
 
 
@@ -225,13 +301,29 @@ end
 
 to count-unique-ids
   set uniqueIdsSet (list)
-  ask turtles [
+  ask turtles with [not member? self centroids] [
     if not member? id uniqueIdsSet [
       set uniqueIdsSet fput id uniqueIdsSet
     ]
   ]
   set nbId length uniqueIdsSet
+
 end
+
+to color-swarm
+  foreach uniqueIdsSet [
+    x -> let curId x
+    let colorSwarm  one-of (remove-item 0 base-colors)
+    let matchingTurtles turtles with [id = curId]
+    if any? matchingTurtles [
+      ask matchingTurtles[
+        set color colorSwarm
+
+      ]
+  ]]
+
+end
+
 
 to calculate-centroid
   set listXcentroid []
@@ -249,6 +341,8 @@ to calculate-centroid
   if any? matchingTurtles [
     let avgx mean [xcor] of matchingTurtles
     let avgy mean [ycor] of matchingTurtles
+    let avgheadx mean [sin heading] of matchingTurtles
+    let avgheady mean [cos heading] of matchingTurtles
 
       ;Ne pas creer des centroids car affecte la dynamique
     create-centroids 1 [
@@ -256,6 +350,13 @@ to calculate-centroid
       set color red
       set size 1
       setxy avgx avgy
+      set hidden? true;
+      set id-centroids curId
+        ifelse avgheadx = 0 and avgheady = 0
+    [   ]
+    [ set heading atan avgheadx avgheady ]
+
+
     ]
 
       ; Liste de centroids
@@ -365,7 +466,7 @@ max-align-turn
 max-align-turn
 0.0
 20.0
-5.5
+5.0
 0.25
 1
 degrees
@@ -410,7 +511,7 @@ vision
 vision
 0.0
 10.0
-3.0
+6.0
 0.5
 1
 patches
@@ -418,9 +519,9 @@ HORIZONTAL
 
 SLIDER
 9
-169
+171
 232
-202
+204
 minimum-separation
 minimum-separation
 0.0
@@ -447,10 +548,10 @@ NIL
 HORIZONTAL
 
 PLOT
-884
-139
-1084
-289
+899
+418
+1099
+568
 plot 1
 NIL
 NIL
@@ -477,6 +578,96 @@ deltaDirection
 1
 1
 NIL
+HORIZONTAL
+
+SLIDER
+817
+102
+1004
+135
+vision-centroids
+vision-centroids
+0
+50
+10.0
+1
+1
+patches
+HORIZONTAL
+
+SLIDER
+814
+149
+1054
+182
+minimum-separation-centroids
+minimum-separation-centroids
+0
+10
+1.5
+0.5
+1
+patches
+HORIZONTAL
+
+SLIDER
+816
+198
+1048
+231
+max-align-turn-centroids
+max-align-turn-centroids
+0
+20
+5.5
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+816
+238
+1059
+271
+max-cohere-turn-centroids
+max-cohere-turn-centroids
+0
+20
+3.0
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+817
+284
+1072
+317
+max-separate-turn-centroids
+max-separate-turn-centroids
+0
+20
+1.0
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+863
+374
+1095
+407
+max-centroid-command
+max-centroid-command
+0
+20
+1.0
+0.5
+1
+degree
 HORIZONTAL
 
 @#$#@#$#@
