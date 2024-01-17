@@ -249,6 +249,8 @@ to calculate-centroid
   if any? matchingTurtles [
     let avgx mean [xcor] of matchingTurtles
     let avgy mean [ycor] of matchingTurtles
+    let avgheadx mean [sin heading] of matchingTurtles
+    let avgheady mean [cos heading] of matchingTurtles
 
       ;Ne pas creer des centroids car affecte la dynamique
     create-centroids 1 [
@@ -256,6 +258,9 @@ to calculate-centroid
       set color red
       set size 1
       setxy avgx avgy
+      ifelse avgheadx = 0 and avgheady = 0
+    [   ]
+    [ set heading atan avgheadx avgheady ]
     ]
 
       ; Liste de centroids
@@ -365,7 +370,7 @@ max-align-turn
 max-align-turn
 0.0
 20.0
-5.5
+5.0
 0.25
 1
 degrees
@@ -410,7 +415,7 @@ vision
 vision
 0.0
 10.0
-3.0
+6.0
 0.5
 1
 patches
@@ -418,9 +423,9 @@ HORIZONTAL
 
 SLIDER
 9
-169
+171
 232
-202
+204
 minimum-separation
 minimum-separation
 0.0
@@ -447,10 +452,10 @@ NIL
 HORIZONTAL
 
 PLOT
-884
-139
-1084
-289
+899
+418
+1099
+568
 plot 1
 NIL
 NIL
@@ -477,6 +482,96 @@ deltaDirection
 1
 1
 NIL
+HORIZONTAL
+
+SLIDER
+817
+102
+1004
+135
+vision-centroids
+vision-centroids
+0
+50
+10.0
+1
+1
+patches
+HORIZONTAL
+
+SLIDER
+814
+149
+1054
+182
+minimum-separation-centroids
+minimum-separation-centroids
+0
+10
+1.5
+0.5
+1
+patches
+HORIZONTAL
+
+SLIDER
+816
+198
+1048
+231
+max-align-turn-centroids
+max-align-turn-centroids
+0
+20
+5.5
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+816
+238
+1059
+271
+max-cohere-turn-centroids
+max-cohere-turn-centroids
+0
+20
+3.0
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+817
+284
+1072
+317
+max-separate-turn-centroids
+max-separate-turn-centroids
+0
+20
+1.0
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+863
+374
+1095
+407
+max-centroid-command
+max-centroid-command
+0
+20
+1.0
+0.5
+1
+degree
 HORIZONTAL
 
 @#$#@#$#@

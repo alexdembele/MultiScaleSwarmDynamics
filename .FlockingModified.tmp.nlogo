@@ -1,4 +1,5 @@
 breed [centroids centroid]
+breed [birds bird]
 turtles-own [
 
   flockmates         ;; agentset of nearby turtles
@@ -6,6 +7,15 @@ turtles-own [
   nearest-neighbor   ;; closest one of our flockmates
   id                 ;; identity of the swarm the turtle belongs to
 
+
+]
+
+birds-own
+[
+  flockmates         ;; agentset of nearby turtles
+  nonCentroids ;; agentset of nearby turtles that are not centroids
+  nearest-neighbor   ;; closest one of our flockmates
+  id                 ;; identity of the swarm the turtle belongs to
 
 ]
 
@@ -22,7 +32,7 @@ currentId
 ]
 to setup
   clear-all
-  create-turtles population
+  create-birds population
     [ set color yellow - 2 + random 7  ;; random shades look nice
       set size 1.5  ;; easier to see
       setxy random-xcor random-ycor
@@ -40,10 +50,10 @@ end
 
 to go
 
-  ask turtles with [not member? self centroids] [ flock ]
+  ask birds [ flock ]
   ;; the following line is used to make the turtles
   ;; animate more smoothly.
-  repeat 5 [ ask turtles [ fd 0.2 ] display ]
+  repeat 5 [ ask birds [ fd 0.2 ] display ]
   ;; for greater efficiency, at the expense of smooth
   ;; animation, substitute the following line instead:
   ;;   ask turtles [ fd 1 ]
@@ -52,7 +62,7 @@ to go
   ifelse i < 5
   [set i i + 1]
   [clear-links ;clear all the swarm identifier to recompute the swarm detection
-   ask turtles [ set id -1 ];
+   ask birds [ set id -1 ];
    set currentId 1
   set i 0
     detect-swarm
@@ -71,7 +81,7 @@ to go
   tick
 end
 
-to flock  ;; turtle procedure
+to flock  ;; bird procedure
   find-flockmates
 
   if any? flockmates
@@ -85,11 +95,12 @@ to flock  ;; turtle procedure
 end
 
 to find-flockmates  ;; turtle procedure
-  set flockmates other turtles in-radius vision
+  set flockmates other s in-radius vision
+
 end
 
 to find-nearest-neighbor ;; turtle procedure
-  set nearest-neighbor min-one-of flockmate [distance myself]
+  set nearest-neighbor min-one-of flockmates [distance myself]
 end
 
 ;;; SEPARATE
@@ -153,35 +164,16 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
 end
 
 to detect-swarm
-  ask turtles[
+  ask birds[
   ;;create links between turtles based on a distance
-  ask other turtles in-radius distanceSwarm [
+  ask other birds in-radius distanceSwarm [
       if (heading > [heading] of myself - deltaDirection) and (heading < [heading] of myself + deltaDirection) [create-link-with myself] ; créez un lien entre l'agent en cours et chaque voisin
     ]
   ]
 
-  ;;update id thanks to the links
-;  ask turtles [
-;
-;    if id < 0
-;    [
-;
-;      let  myInLinkNeighbors in-link-neighbors
-;
-;    ask myInLinkNeighbors
-;    [
-;      if id < 0
-;        [set id currentId]
-;
-;
-;
-;    ]
-;      set id currentId
-;      set currentId currentId + 1]
-;
-;  ]
 
-  ask turtles
+
+  ask birds
   [
     set id currentId
     set currentId currentId + 1
@@ -192,7 +184,7 @@ to detect-swarm
   [
 
 
-    ask turtles
+    ask birds
     [
       let  myInLinkNeighbors in-link-neighbors
       let my-id id
@@ -209,10 +201,10 @@ to detect-swarm
 
 
   ;;color turtles thanks to Id
-  let turtle-with-max-id max-one-of turtles [id]
+  let turtle-with-max-id max-one-of birds [id]
   set max-id [id] of turtle-with-max-id
 
-  ask turtles [
+  ask birds [
 
     set color (rgb 0 0 floor (255 * id / max-id  ))
   ]
@@ -224,7 +216,7 @@ end
 
 to count-unique-ids
   set uniqueIdsSet (list)
-  ask turtles [
+  ask birds [
     if not member? id uniqueIdsSet [
       set uniqueIdsSet fput id uniqueIdsSet
     ]
@@ -244,10 +236,12 @@ to calculate-centroid
 
   foreach uniqueIdsSet [
     x -> let curId x
-  let matchingTurtles turtles with [id = curId]
-  if any? matchingTurtles [
-    let avgx mean [xcor] of matchingTurtles
-    let avgy mean [ycor] of matchingTurtles
+  let matchingBirds birds with [id = curId]
+  if any? matchingBirds [
+    let avgx mean [xcor] of matchingBirds
+    let avgy mean [ycor] of matchingBirds
+    let avgheadx mean [sin heading] of matchingBirds
+    let avgheady mean [cos heading] of matchingBirds
 
       ;Ne pas creer des centroids car affecte la dynamique
     create-centroids 1 [
@@ -255,6 +249,9 @@ to calculate-centroid
       set color red
       set size 1
       setxy avgx avgy
+      ifelse avgheadx = 0 and avgheady = 0
+    [   ]
+    [ set heading atan avgheadx avgheady ]
     ]
 
       ; Liste de centroids
@@ -364,7 +361,7 @@ max-align-turn
 max-align-turn
 0.0
 20.0
-5.5
+5.0
 0.25
 1
 degrees
@@ -409,7 +406,7 @@ vision
 vision
 0.0
 10.0
-3.0
+6.0
 0.5
 1
 patches
@@ -417,9 +414,9 @@ HORIZONTAL
 
 SLIDER
 9
-169
+171
 232
-202
+204
 minimum-separation
 minimum-separation
 0.0
@@ -446,10 +443,10 @@ NIL
 HORIZONTAL
 
 PLOT
-884
-139
-1084
-289
+899
+418
+1099
+568
 plot 1
 NIL
 NIL
@@ -476,6 +473,96 @@ deltaDirection
 1
 1
 NIL
+HORIZONTAL
+
+SLIDER
+817
+102
+1004
+135
+vision-centroids
+vision-centroids
+0
+50
+10.0
+1
+1
+patches
+HORIZONTAL
+
+SLIDER
+814
+149
+1054
+182
+minimum-separation-centroids
+minimum-separation-centroids
+0
+10
+1.5
+0.5
+1
+patches
+HORIZONTAL
+
+SLIDER
+816
+198
+1048
+231
+max-align-turn-centroids
+max-align-turn-centroids
+0
+20
+5.5
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+816
+238
+1059
+271
+max-cohere-turn-centroids
+max-cohere-turn-centroids
+0
+20
+3.0
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+817
+284
+1072
+317
+max-separate-turn-centroids
+max-separate-turn-centroids
+0
+20
+1.0
+0.5
+1
+degree
+HORIZONTAL
+
+SLIDER
+863
+374
+1095
+407
+max-centroid-command
+max-centroid-command
+0
+20
+1.0
+0.5
+1
+degree
 HORIZONTAL
 
 @#$#@#$#@
