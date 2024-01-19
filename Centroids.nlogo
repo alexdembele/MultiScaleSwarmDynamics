@@ -10,7 +10,7 @@ to setup
 end
 
 to go
-  clear-all
+  clear-turtles
   ls:ask ls:models [ go ]
   let number_centroids [count centroids] ls:of ls:models
   let x_centroids [ListXCentroids] ls:of ls:models
