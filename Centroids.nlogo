@@ -1,93 +1,70 @@
-breed [centroids centroid]
-breed [birds bird]
+extensions [ls]
+
 turtles-own [
-
   flockmates         ;; agentset of nearby turtles
-  nonCentroids ;; agentset of nearby turtles that are not centroids
   nearest-neighbor   ;; closest one of our flockmates
-  id                 ;; identity of the swarm the turtle belongs to
-
-
 ]
 
-birds-own
-[
-  flockmates         ;; agentset of nearby turtles
-  nonCentroids ;; agentset of nearby turtles that are not centroids
-  nearest-neighbor   ;; closest one of our flockmates
-  id                 ;; identity of the swarm the turtle belongs to
-
-]
-
-centroids-own[idcentroid]
-
-globals
-[i
-currentId
-  max-id
-  nbId
-  uniqueIdsSet
-  listXcentroid
-  listYcentroid
-]
 to setup
-  clear-all
-  create-birds population
-    [ set color yellow - 2 + random 7  ;; random shades look nice
-      set size 1.5  ;; easier to see
-      setxy random-xcor random-ycor
-      set flockmates no-turtles
-      set id -1
-
-
-  ]
-  ask patches [ set pcolor white ]
-  set i 0
-  set currentId 1
-
+  ls:reset
+  ca
+  ls:create-interactive-models number_worlds "FlockingModified.nlogo"
+  ls:ask ls:models [ setup ]
   reset-ticks
+  print("ticks supposedly reset")
 end
 
 to go
+  clear-turtles
+  ls:ask ls:models [ go ]
+  let number_centroids [count centroids] ls:of ls:models
 
-  ask birds [ flock ]
+  let x_centroids [ListXcentroid] ls:of ls:models
+  let y_centroids [ListYcentroid] ls:of ls:models
+  let heading_centroids [ListHeadingCentroid] ls:of ls:models
+  let poids_centroids [listPoidsCentroid] ls:of ls:models
+  ;;show [ centroids ] ls:of ls:models
+  let models ls:models
+  while [not empty? models] [
+    let id_world last models
+    let number_centroid item id_world number_centroids
+    let xcoords item id_world x_centroids
+    let ycoords item id_world y_centroids
+
+    let headings item id_world heading_centroids
+    while[number_centroid > 0] [
+      create-turtles 1 [
+        set color 15 + 10 * id_world
+        setxy last xcoords last ycoords
+        set heading last headings
+      ]
+      ;this is a home made pop, equivalent to java pop
+      set xcoords but-last xcoords
+      set ycoords but-last ycoords
+      set headings but-last headings
+      set number_centroid number_centroid - 1
+    ]
+    set models but-last models
+
+  ]
+
+  ;;realisation du flocking
+  print(" debut flocking")
+  ask turtles [ flock ]
   ;; the following line is used to make the turtles
   ;; animate more smoothly.
-  repeat 5 [ ask birds [ fd 0.2 ] display ]
+  repeat 5 [ ask turtles [ fd 0.2 ] display ]
   ;; for greater efficiency, at the expense of smooth
   ;; animation, substitute the following line instead:
   ;;   ask turtles [ fd 1 ]
-
-  ;Detection des swarms sur un nombre de step distincts
-  ifelse i < 5
-  [set i i + 1]
-  [clear-links ;clear all the swarm identifier to recompute the swarm detection
-   ask birds [ set id -1 ];
-   set currentId 1
-  set i 0
-    detect-swarm
-
-   ];swarm detection
-
-  count-unique-ids
-  calculate-centroid
-
-
-
-
-
-
-
+  print(" fin flocking")
   tick
 end
 
-to flock  ;; bird procedure
+to flock  ;; turtle procedure
   find-flockmates
-
   if any? flockmates
-    [
-
-      find-nearest-neighbor
+    [ find-nearest-neighbor
       ifelse distance nearest-neighbor < minimum-separation
         [ separate ]
         [ align
@@ -95,8 +72,7 @@ to flock  ;; bird procedure
 end
 
 to find-flockmates  ;; turtle procedure
-  set flockmates other s in-radius vision
-
+  set flockmates other turtles in-radius vision
 end
 
 to find-nearest-neighbor ;; turtle procedure
@@ -162,128 +138,15 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
         [ lt max-turn ] ]
     [ rt turn ]
 end
-
-to detect-swarm
-  ask birds[
-  ;;create links between turtles based on a distance
-  ask other birds in-radius distanceSwarm [
-      if (heading > [heading] of myself - deltaDirection) and (heading < [heading] of myself + deltaDirection) [create-link-with myself] ; créez un lien entre l'agent en cours et chaque voisin
-    ]
-  ]
-
-
-
-  ask birds
-  [
-    set id currentId
-    set currentId currentId + 1
-
-  ]
-  let y 0
-  repeat 100
-  [
-
-
-    ask birds
-    [
-      let  myInLinkNeighbors in-link-neighbors
-      let my-id id
-      ask myInLinkNeighbors[
-        let N-id id
-        let min-id min list my-id N-id
-        set id min-id
-      ]
-    ]
-  ]
-
-
-
-
-
-  ;;color turtles thanks to Id
-  let turtle-with-max-id max-one-of birds [id]
-  set max-id [id] of turtle-with-max-id
-
-  ask birds [
-
-    set color (rgb 0 0 floor (255 * id / max-id  ))
-  ]
-
-
-
-
-end
-
-to count-unique-ids
-  set uniqueIdsSet (list)
-  ask birds [
-    if not member? id uniqueIdsSet [
-      set uniqueIdsSet fput id uniqueIdsSet
-    ]
-  ]
-  set nbId length uniqueIdsSet
-end
-
-to calculate-centroid
-  set listXcentroid []
-  set listYcentroid []
-
-  ask  centroids [
-    die
-  ]
-
-
-
-  foreach uniqueIdsSet [
-    x -> let curId x
-  let matchingBirds birds with [id = curId]
-  if any? matchingBirds [
-    let avgx mean [xcor] of matchingBirds
-    let avgy mean [ycor] of matchingBirds
-    let avgheadx mean [sin heading] of matchingBirds
-    let avgheady mean [cos heading] of matchingBirds
-
-      ;Ne pas creer des centroids car affecte la dynamique
-    create-centroids 1 [
-      set shape "circle"
-      set color red
-      set size 1
-      setxy avgx avgy
-      ifelse avgheadx = 0 and avgheady = 0
-    [   ]
-    [ set heading atan avgheadx avgheady ]
-    ]
-
-      ; Liste de centroids
-      ;set listXcentroid lput "hello" maListe
-
-
-  ]
-  ]
-
-
-end
-
-
-
-
-
-
-
-
-
-
-; Copyright 1998 Uri Wilensky.
-; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-250
+210
 10
-755
-516
+647
+448
 -1
 -1
-7.0
+13.0
 1
 10
 1
@@ -293,21 +156,21 @@ GRAPHICS-WINDOW
 1
 1
 1
--35
-35
--35
-35
-1
-1
+-16
+16
+-16
+16
+0
+0
 1
 ticks
 30.0
 
 BUTTON
-39
-93
-116
-126
+21
+53
+94
+86
 NIL
 setup
 NIL
@@ -321,13 +184,13 @@ NIL
 1
 
 BUTTON
-122
-93
-203
-126
+123
+54
+186
+87
 NIL
 go
-T
+NIL
 1
 T
 OBSERVER
@@ -337,230 +200,105 @@ NIL
 NIL
 0
 
-SLIDER
-9
-51
-232
-84
-population
-population
-1.0
-1000.0
-300.0
+INPUTBOX
+22
+99
+183
+159
+number_worlds
 1.0
 1
+0
+Number
+
+BUTTON
+65
+10
+145
+43
 NIL
+launch
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+17
+172
+189
+205
+vision
+vision
+0
+10
+5.0
+0.5
+1
+patches
 HORIZONTAL
 
 SLIDER
-4
-217
-237
-250
+0
+214
+191
+247
+minimum-separation
+minimum-separation
+0
+5
+1.0
+0.25
+1
+patches
+HORIZONTAL
+
+SLIDER
+17
+277
+197
+310
 max-align-turn
 max-align-turn
-0.0
-20.0
+0
+20
 5.0
 0.25
 1
-degrees
+degree
+HORIZONTAL
+
+SLIDER
+7
+315
+205
+348
+max-cohere-turn
+max-cohere-turn
+0
+20
+3.0
+0.25
+1
+degree
 HORIZONTAL
 
 SLIDER
 4
-251
-237
-284
-max-cohere-turn
-max-cohere-turn
-0.0
-20.0
-3.0
-0.25
-1
-degrees
-HORIZONTAL
-
-SLIDER
-4
-285
-237
-318
+356
+202
+389
 max-separate-turn
 max-separate-turn
-0.0
-20.0
+0
+20
 1.5
 0.25
-1
-degrees
-HORIZONTAL
-
-SLIDER
-9
-135
-232
-168
-vision
-vision
-0.0
-10.0
-6.0
-0.5
-1
-patches
-HORIZONTAL
-
-SLIDER
-9
-171
-232
-204
-minimum-separation
-minimum-separation
-0.0
-5.0
-0.75
-0.25
-1
-patches
-HORIZONTAL
-
-SLIDER
-34
-362
-206
-395
-distanceSwarm
-distanceSwarm
-0
-10
-4.0
-1
-1
-NIL
-HORIZONTAL
-
-PLOT
-899
-418
-1099
-568
-plot 1
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot nbId"
-
-SLIDER
-35
-415
-207
-448
-deltaDirection
-deltaDirection
-0
-20
-12.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-817
-102
-1004
-135
-vision-centroids
-vision-centroids
-0
-50
-10.0
-1
-1
-patches
-HORIZONTAL
-
-SLIDER
-814
-149
-1054
-182
-minimum-separation-centroids
-minimum-separation-centroids
-0
-10
-1.5
-0.5
-1
-patches
-HORIZONTAL
-
-SLIDER
-816
-198
-1048
-231
-max-align-turn-centroids
-max-align-turn-centroids
-0
-20
-5.5
-0.5
-1
-degree
-HORIZONTAL
-
-SLIDER
-816
-238
-1059
-271
-max-cohere-turn-centroids
-max-cohere-turn-centroids
-0
-20
-3.0
-0.5
-1
-degree
-HORIZONTAL
-
-SLIDER
-817
-284
-1072
-317
-max-separate-turn-centroids
-max-separate-turn-centroids
-0
-20
-1.0
-0.5
-1
-degree
-HORIZONTAL
-
-SLIDER
-863
-374
-1095
-407
-max-centroid-command
-max-centroid-command
-0
-20
-1.0
-0.5
 1
 degree
 HORIZONTAL
@@ -568,107 +306,39 @@ HORIZONTAL
 @#$#@#$#@
 ## WHAT IS IT?
 
-This model is an attempt to mimic the flocking of birds.  (The resulting motion also resembles schools of fish.)  The flocks that appear in this model are not created or led in any way by special leader birds.  Rather, each bird is following exactly the same set of rules, from which flocks emerge.
+(a general understanding of what the model is trying to show or explain)
 
 ## HOW IT WORKS
 
-The birds follow three rules: "alignment", "separation", and "cohesion".
-
-"Alignment" means that a bird tends to turn so that it is moving in the same direction that nearby birds are moving.
-
-"Separation" means that a bird will turn to avoid another bird which gets too close.
-
-"Cohesion" means that a bird will move towards other nearby birds (unless another bird is too close).
-
-When two birds are too close, the "separation" rule overrides the other two, which are deactivated until the minimum separation is achieved.
-
-The three rules affect only the bird's heading.  Each bird always moves forward at the same constant speed.
+(what rules the agents use to create the overall behavior of the model)
 
 ## HOW TO USE IT
 
-First, determine the number of birds you want in the simulation and set the POPULATION slider to that value.  Press SETUP to create the birds, and press GO to have them start flying around.
-
-The default settings for the sliders will produce reasonably good flocking behavior.  However, you can play with them to get variations:
-
-Three TURN-ANGLE sliders control the maximum angle a bird can turn as a result of each rule.
-
-VISION is the distance that each bird can see 360 degrees around it.
+(how to use the model, including a description of each of the items in the Interface tab)
 
 ## THINGS TO NOTICE
 
-Central to the model is the observation that flocks form without a leader.
-
-There are no random numbers used in this model, except to position the birds initially.  The fluid, lifelike behavior of the birds is produced entirely by deterministic rules.
-
-Also, notice that each flock is dynamic.  A flock, once together, is not guaranteed to keep all of its members.  Why do you think this is?
-
-After running the model for a while, all of the birds have approximately the same heading.  Why?
-
-Sometimes a bird breaks away from its flock.  How does this happen?  You may need to slow down the model or run it step by step in order to observe this phenomenon.
+(suggested things for the user to notice while running the model)
 
 ## THINGS TO TRY
 
-Play with the sliders to see if you can get tighter flocks, looser flocks, fewer flocks, more flocks, more or less splitting and joining of flocks, more or less rearranging of birds within flocks, etc.
-
-You can turn off a rule entirely by setting that rule's angle slider to zero.  Is one rule by itself enough to produce at least some flocking?  What about two rules?  What's missing from the resulting behavior when you leave out each rule?
-
-Will running the model for a long time produce a static flock?  Or will the birds never settle down to an unchanging formation?  Remember, there are no random numbers used in this model.
+(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
 
 ## EXTENDING THE MODEL
 
-Currently the birds can "see" all around them.  What happens if birds can only see in front of them?  The `in-cone` primitive can be used for this.
-
-Is there some way to get V-shaped flocks, like migrating geese?
-
-What happens if you put walls around the edges of the world that the birds can't fly into?
-
-Can you get the birds to fly around obstacles in the middle of the world?
-
-What would happen if you gave the birds different velocities?  For example, you could make birds that are not near other birds fly faster to catch up to the flock.  Or, you could simulate the diminished air resistance that birds experience when flying together by making them fly faster when in a group.
-
-Are there other interesting ways you can make the birds different from each other?  There could be random variation in the population, or you could have distinct "species" of bird.
+(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
 
 ## NETLOGO FEATURES
 
-Notice the need for the `subtract-headings` primitive and special procedure for averaging groups of headings.  Just subtracting the numbers, or averaging the numbers, doesn't give you the results you'd expect, because of the discontinuity where headings wrap back to 0 once they reach 360.
+(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
 
 ## RELATED MODELS
 
-* Moths
-* Flocking Vee Formation
-* Flocking - Alternative Visualizations
+(models in the NetLogo Models Library and elsewhere which are of related interest)
 
 ## CREDITS AND REFERENCES
 
-This model is inspired by the Boids simulation invented by Craig Reynolds.  The algorithm we use here is roughly similar to the original Boids algorithm, but it is not the same.  The exact details of the algorithm tend not to matter very much -- as long as you have alignment, separation, and cohesion, you will usually get flocking behavior resembling that produced by Reynolds' original model.  Information on Boids is available at https://web.archive.org/web/20210818090425/http://www.red3d.com/cwr/boids/.
-
-## HOW TO CITE
-
-If you mention this model or the NetLogo software in a publication, we ask that you include the citations below.
-
-For the model itself:
-
-* Wilensky, U. (1998).  NetLogo Flocking model.  http://ccl.northwestern.edu/netlogo/models/Flocking.  Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
-
-Please cite the NetLogo software as:
-
-* Wilensky, U. (1999). NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
-
-## COPYRIGHT AND LICENSE
-
-Copyright 1998 Uri Wilensky.
-
-![CC BY-NC-SA 3.0](http://ccl.northwestern.edu/images/creativecommons/byncsa.png)
-
-This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 License.  To view a copy of this license, visit https://creativecommons.org/licenses/by-nc-sa/3.0/ or send a letter to Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
-
-Commercial licenses are also available. To inquire about commercial licenses, please contact Uri Wilensky at uri@northwestern.edu.
-
-This model was created as part of the project: CONNECTED MATHEMATICS: MAKING SENSE OF COMPLEX PHENOMENA THROUGH BUILDING OBJECT-BASED PARALLEL MODELS (OBPML).  The project gratefully acknowledges the support of the National Science Foundation (Applications of Advanced Technologies Program) -- grant numbers RED #9552950 and REC #9632612.
-
-This model was converted to NetLogo as part of the projects: PARTICIPATORY SIMULATIONS: NETWORK-BASED DESIGN FOR SYSTEMS LEARNING IN CLASSROOMS and/or INTEGRATED SIMULATION AND MODELING ENVIRONMENT. The project gratefully acknowledges the support of the National Science Foundation (REPP & ROLE programs) -- grant numbers REC #9814682 and REC-0126227. Converted from StarLogoT to NetLogo, 2002.
-
-<!-- 1998 2002 -->
+(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
 @#$#@#$#@
 default
 true
@@ -862,6 +532,22 @@ Polygon -7500403 true true 135 105 90 60 45 45 75 105 135 135
 Polygon -7500403 true true 165 105 165 135 225 105 255 45 210 60
 Polygon -7500403 true true 135 90 120 45 150 15 180 45 165 90
 
+sheep
+false
+15
+Circle -1 true true 203 65 88
+Circle -1 true true 70 65 162
+Circle -1 true true 150 105 120
+Polygon -7500403 true false 218 120 240 165 255 165 278 120
+Circle -7500403 true false 214 72 67
+Rectangle -1 true true 164 223 179 298
+Polygon -1 true true 45 285 30 285 30 240 15 195 45 210
+Circle -1 true true 3 83 150
+Rectangle -1 true true 65 221 80 296
+Polygon -1 true true 195 285 210 285 210 240 240 210 195 210
+Polygon -7500403 true false 276 85 285 105 302 99 294 83
+Polygon -7500403 true false 219 85 210 105 193 99 201 83
+
 square
 false
 0
@@ -946,6 +632,13 @@ Line -7500403 true 40 84 269 221
 Line -7500403 true 40 216 269 79
 Line -7500403 true 84 40 221 269
 
+wolf
+false
+0
+Polygon -16777216 true false 253 133 245 131 245 133
+Polygon -7500403 true true 2 194 13 197 30 191 38 193 38 205 20 226 20 257 27 265 38 266 40 260 31 253 31 230 60 206 68 198 75 209 66 228 65 243 82 261 84 268 100 267 103 261 77 239 79 231 100 207 98 196 119 201 143 202 160 195 166 210 172 213 173 238 167 251 160 248 154 265 169 264 178 247 186 240 198 260 200 271 217 271 219 262 207 258 195 230 192 198 210 184 227 164 242 144 259 145 284 151 277 141 293 140 299 134 297 127 273 119 270 105
+Polygon -7500403 true true -1 195 14 180 36 166 40 153 53 140 82 131 134 133 159 126 188 115 227 108 236 102 238 98 268 86 269 92 281 87 269 103 269 113
+
 x
 false
 0
@@ -954,9 +647,6 @@ Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
 NetLogo 6.4.0
 @#$#@#$#@
-set population 200
-setup
-repeat 200 [ go ]
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

@@ -19,7 +19,11 @@ birds-own
 
 ]
 
-centroids-own[idcentroid]
+centroids-own
+[
+  idcentroid
+  poids
+]
 
 globals
 [i
@@ -29,6 +33,8 @@ currentId
   uniqueIdsSet
   listXcentroid
   listYcentroid
+  listHeadingCentroid
+  listPoidsCentroid
 ]
 to setup
   clear-all
@@ -44,6 +50,7 @@ to setup
   ask patches [ set pcolor white ]
   set i 0
   set currentId 1
+
 
   reset-ticks
 end
@@ -227,6 +234,7 @@ end
 to calculate-centroid
   set listXcentroid []
   set listYcentroid []
+  set listHeadingCentroid []
 
   ask  centroids [
     die
@@ -243,11 +251,12 @@ to calculate-centroid
     let avgheadx mean [sin heading] of matchingBirds
     let avgheady mean [cos heading] of matchingBirds
 
-      ;Ne pas creer des centroids car affecte la dynamique
+
     create-centroids 1 [
       set shape "circle"
       set color red
       set size 1
+      set poids count matchingBirds
       setxy avgx avgy
       ifelse avgheadx = 0 and avgheady = 0
     [   ]
@@ -258,10 +267,13 @@ to calculate-centroid
       ;set listXcentroid lput "hello" maListe
 
 
+
   ]
   ]
-
-
+  set listXcentroid [xcor] of centroids
+  set listYcentroid [ycor] of centroids
+  set listHeadingCentroid [heading] of centroids
+  set listPoidsCentroid [poids] of centroids
 end
 
 
@@ -954,9 +966,6 @@ Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
 NetLogo 6.4.0
 @#$#@#$#@
-set population 200
-setup
-repeat 200 [ go ]
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
