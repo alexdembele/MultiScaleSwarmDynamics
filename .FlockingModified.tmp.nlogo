@@ -155,16 +155,22 @@ to-report average-heading-towards-flockmates  ;; turtle procedure
     [ report heading ]
     [ report atan x-component y-component ]
 end
+
+
+
+
+
 ;; Swarm of swarm impact
 to swarm-turn [finalHeadings  finalId];;liste id centroids ;;liste headings ;; turn toward heading max angle
   let totalId length finalId
-  foreach totalId [
+  foreach ( range 1 totalId) [
   u -> let  indice u
   let outHead item indice finalHeadings
     let outId item indice finalId
   let matchingBirds birds with [id = outId]
   if any? matchingBirds [
       turn-towards outHead max-swarm-turn
+
 
 
 ]
@@ -175,6 +181,13 @@ to swarm-turn [finalHeadings  finalId];;liste id centroids ;;liste headings ;; t
   ]
 
 end
+
+
+
+
+
+
+
 
 ;;; HELPER PROCEDURES
 

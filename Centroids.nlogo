@@ -58,7 +58,7 @@ to go
 
   ;;realisation du flocking
   print(" debut flocking")
-  repeat 5 [
+  repeat 1 [
   ask turtles [ flock ]
   ;; the following line is used to make the turtles
   ;; animate more smoothly.
@@ -220,7 +220,7 @@ INPUTBOX
 183
 159
 number_worlds
-2.0
+1.0
 1
 0
 Number

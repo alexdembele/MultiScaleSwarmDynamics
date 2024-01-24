@@ -58,7 +58,7 @@ to go
 
   ;;realisation du flocking
   print(" debut flocking")
-  repeat 5 [
+  repeat  [
   ask turtles [ flock ]
   ;; the following line is used to make the turtles
   ;; animate more smoothly.
@@ -68,11 +68,9 @@ to go
   ;;   ask turtles [ fd 1 ]
   tick]
   print(" fin flocking")
-  llet Outheadings [heading] of turtles
-  let OutId [id] of turtles
-  ls:ask ls:models [ set finalHeadings Outheadings
-                     set finalId OutId
-                     swarm-turn]
+  ls:let Outheadings [heading] of turtles
+  ls:let OutId [id] of turtles
+  ls:ask ls:models [swarm-turn Outheadings OutId]
 
 
 end
