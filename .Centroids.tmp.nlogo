@@ -68,9 +68,11 @@ to go
   ;;   ask turtles [ fd 1 ]
   tick]
   print(" fin flocking")
-  ls:let Outheadings [heading] of turtles
-  ls:let OutId [id] of turtles
-  ls:ask ls:models [swarm-turn Outheadings OutId]
+  llet Outheadings [heading] of turtles
+  let OutId [id] of turtles
+  ls:ask ls:models [ set finalHeadings Outheadings
+                     set finalId OutId
+                     swarm-turn]
 
 
 end
@@ -220,7 +222,7 @@ INPUTBOX
 183
 159
 number_worlds
-2.0
+1.0
 1
 0
 Number

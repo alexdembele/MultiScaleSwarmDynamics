@@ -35,6 +35,11 @@ currentId
   listYcentroid
   listHeadingCentroid
   listPoidsCentroid
+  listIdCentroid
+
+
+
+
 ]
 to setup
   clear-all
@@ -73,6 +78,7 @@ to go
    set currentId 1
   set i 0
     detect-swarm
+    color-swarm
 
    ];swarm detection
 
@@ -150,6 +156,38 @@ to-report average-heading-towards-flockmates  ;; turtle procedure
     [ report atan x-component y-component ]
 end
 
+
+
+
+
+;; Swarm of swarm impact
+to swarm-turn [finalHeadings  finalId];;liste id centroids ;;liste headings ;; turn toward heading max angle
+  let totalId length finalId
+  foreach totalId [
+  u -> let  indice u
+  let outHead item indice finalHeadings
+    let outId item indice finalId
+  let matchingBirds birds with [id = outId]
+  if any? matchingBirds [
+      turn-towards outHead max-swarm-turn
+
+
+]
+
+
+
+
+  ]
+
+end
+
+
+
+
+
+
+
+
 ;;; HELPER PROCEDURES
 
 to turn-towards [new-heading max-turn]  ;; turtle procedure
@@ -207,14 +245,7 @@ to detect-swarm
 
 
 
-  ;;color turtles thanks to Id
-  let turtle-with-max-id max-one-of birds [id]
-  set max-id [id] of turtle-with-max-id
 
-  ask birds [
-
-    set color (rgb 0 0 floor (255 * id / max-id  ))
-  ]
 
 
 
@@ -274,6 +305,21 @@ to calculate-centroid
   set listYcentroid [ycor] of centroids
   set listHeadingCentroid [heading] of centroids
   set listPoidsCentroid [poids] of centroids
+  set listIdCentroid [idcentroid] of centroids
+end
+
+to color-swarm
+  foreach uniqueIdsSet [
+    x -> let curId x
+    let colorSwarm  one-of (remove-item 0 base-colors)
+    let matchingTurtles birds with [id = curId]
+    if any? matchingTurtles [
+      ask matchingTurtles[
+        set color colorSwarm
+
+      ]
+  ]]
+
 end
 
 
@@ -488,91 +534,16 @@ NIL
 HORIZONTAL
 
 SLIDER
-817
-102
-1004
-135
-vision-centroids
-vision-centroids
-0
-50
-10.0
-1
-1
-patches
-HORIZONTAL
-
-SLIDER
-814
-149
-1054
-182
-minimum-separation-centroids
-minimum-separation-centroids
-0
-10
-1.5
-0.5
-1
-patches
-HORIZONTAL
-
-SLIDER
-816
-198
-1048
-231
-max-align-turn-centroids
-max-align-turn-centroids
+827
+77
+1014
+110
+max-swarm-turn
+max-swarm-turn
 0
 20
-5.5
-0.5
-1
-degree
-HORIZONTAL
-
-SLIDER
-816
-238
-1059
-271
-max-cohere-turn-centroids
-max-cohere-turn-centroids
-0
-20
-3.0
-0.5
-1
-degree
-HORIZONTAL
-
-SLIDER
-817
-284
-1072
-317
-max-separate-turn-centroids
-max-separate-turn-centroids
-0
-20
-1.0
-0.5
-1
-degree
-HORIZONTAL
-
-SLIDER
-863
-374
-1095
-407
-max-centroid-command
-max-centroid-command
-0
-20
-1.0
-0.5
+5.0
+0.25
 1
 degree
 HORIZONTAL
