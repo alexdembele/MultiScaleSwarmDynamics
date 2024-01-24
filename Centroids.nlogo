@@ -7,6 +7,10 @@ turtles-own [
   id
 ]
 
+to launch
+  go
+  tick
+end
 to setup
   ls:reset
   ca
@@ -58,7 +62,7 @@ to go
 
   ;;realisation du flocking
   print(" debut flocking")
-  repeat 1 [
+  repeat 5 [
   ask turtles [ flock ]
   ;; the following line is used to make the turtles
   ;; animate more smoothly.
@@ -174,8 +178,8 @@ GRAPHICS-WINDOW
 16
 -16
 16
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -232,7 +236,7 @@ BUTTON
 43
 NIL
 launch
-NIL
+T
 1
 T
 OBSERVER
