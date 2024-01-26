@@ -1,13 +1,12 @@
 breed [centroids centroid]
 breed [birds bird]
-turtles-own [
 
+turtles-own
+[
   flockmates         ;; agentset of nearby turtles
   nonCentroids ;; agentset of nearby turtles that are not centroids
   nearest-neighbor   ;; closest one of our flockmates
   id                 ;; identity of the swarm the turtle belongs to
-
-
 ]
 
 birds-own
@@ -16,7 +15,6 @@ birds-own
   nonCentroids ;; agentset of nearby turtles that are not centroids
   nearest-neighbor   ;; closest one of our flockmates
   id                 ;; identity of the swarm the turtle belongs to
-
 ]
 
 centroids-own
@@ -26,8 +24,9 @@ centroids-own
 ]
 
 globals
-[i
-currentId
+[
+  i
+  currentId
   max-id
   nbId
   uniqueIdsSet
@@ -36,93 +35,81 @@ currentId
   listHeadingCentroid
   listPoidsCentroid
   listIdCentroid
-
-
-
-
 ]
+
+;;; MAIN
+
 to setup
   clear-all
   create-birds population
-    [ set color yellow - 2 + random 7  ;; random shades look nice
-      set size 1.5  ;; easier to see
-      setxy random-xcor random-ycor
-      set flockmates no-turtles
-      set id -1
-
-
+  [
+    set color yellow - 2 + random 7  ;; random shades look nice
+    set size 1.5  ;; easier to see
+    setxy random-xcor random-ycor
+    set flockmates no-turtles
+    set id -1
   ]
   ask patches [ set pcolor white ]
   set i 0
   set currentId 1
 
-
   reset-ticks
 end
 
 to go
-
   ask birds [ flock ]
   ;; the following line is used to make the turtles
   ;; animate more smoothly.
   repeat 5 [ ask birds [ fd 0.2 ] display ]
   ;; for greater efficiency, at the expense of smooth
   ;; animation, substitute the following line instead:
-  ;;   ask turtles [ fd 1 ]
+  ;; ask turtles [ fd 1 ]
 
-  ;Detection des swarms sur un nombre de step distincts
+  ;Detection of swarms on a number of distinct steps
   ifelse i < 5
   [set i i + 1]
-  [clear-links ;clear all the swarm identifier to recompute the swarm detection
-   ask birds [ set id -1 ];
-   set currentId 1
-  set i 0
+  [
+    clear-links ;clear all the swarm identifier to recompute the swarm detection
+    ask birds [ set id -1 ];
+    set currentId 1
+    set i 0
     detect-swarm
     color-swarm
-
-   ];swarm detection
+  ]
 
   count-unique-ids
   calculate-centroid
-
-
-
-
-
-
-
   tick
 end
+
+;;; SWARM RULES
 
 to flock  ;; bird procedure
   find-flockmates
 
   if any? flockmates
     [
-
       find-nearest-neighbor
       ifelse distance nearest-neighbor < minimum-separation
         [ separate ]
-        [ align
-          cohere ] ]
+        [
+          align
+          cohere
+        ]
+    ]
 end
 
 to find-flockmates  ;; turtle procedure
   set flockmates other birds in-radius vision
-
 end
 
 to find-nearest-neighbor ;; turtle procedure
   set nearest-neighbor min-one-of flockmates [distance myself]
 end
 
-;;; SEPARATE
-
 to separate  ;; turtle procedure
   turn-away ([heading] of nearest-neighbor) max-separate-turn
 end
-
-;;; ALIGN
 
 to align  ;; turtle procedure
   turn-towards average-flockmate-heading max-align-turn
@@ -139,8 +126,6 @@ to-report average-flockmate-heading  ;; turtle procedure
     [ report atan x-component y-component ]
 end
 
-;;; COHERE
-
 to cohere  ;; turtle procedure
   turn-towards average-heading-towards-flockmates max-cohere-turn
 end
@@ -156,35 +141,98 @@ to-report average-heading-towards-flockmates  ;; turtle procedure
     [ report atan x-component y-component ]
 end
 
+;;; SWARM DETECTION
 
-
-
-
-;; Swarm of swarm impact
-to swarm-turn [finalHeadings  finalId];;liste id centroids ;;liste headings ;; turn toward heading max angle
-  let totalId length finalId
-  foreach ( range 1 totalId) [
-  u -> let  indice u
-  let outHead item indice finalHeadings
-    let outId item indice finalId
-  let matchingBirds birds with [id = outId]
-  if any? matchingBirds [
-      ask matchingBirds [turn-towards outHead max-swarm-turn]
-]
-
-
-
-
+to detect-swarm
+  ask birds
+  [
+    ;;create links between turtles based on a distance
+    ask other birds in-radius distanceSwarm
+    [ if (heading > [heading] of myself - deltaDirection) and (heading < [heading] of myself + deltaDirection) [create-link-with myself] ]
   ]
 
+  ask birds
+  [
+    set id currentId
+    set currentId currentId + 1
+  ]
+
+  let y 0
+  repeat 100
+  [
+    ask birds
+    [
+      let  myInLinkNeighbors in-link-neighbors
+      let my-id id
+      ask myInLinkNeighbors
+      [
+        let N-id id
+        let min-id min list my-id N-id
+        set id min-id
+      ]
+    ]
+  ]
 end
 
+to count-unique-ids
+  set uniqueIdsSet (list)
+  ask birds
+  [
+    if not member? id uniqueIdsSet
+    [ set uniqueIdsSet fput id uniqueIdsSet ]
+  ]
+  set nbId length uniqueIdsSet
+end
 
+to calculate-centroid
+  set listXcentroid []
+  set listYcentroid []
+  set listHeadingCentroid []
 
+  ask centroids [ die ]
 
+  foreach uniqueIdsSet
+  [
+    x -> let curId x
+    let matchingBirds birds with [id = curId]
+    if any? matchingBirds
+    [
+      let avgx mean [xcor] of matchingBirds
+      let avgy mean [ycor] of matchingBirds
+      let avgheadx mean [sin heading] of matchingBirds
+      let avgheady mean [cos heading] of matchingBirds
 
+      create-centroids 1
+      [
+        set shape "circle"
+        set color red
+        set size 1
+        set poids count matchingBirds
+        setxy avgx avgy
+        ifelse avgheadx = 0 and avgheady = 0
+        [   ]
+        [ set heading atan avgheadx avgheady ]
+      ]
+    ]
+  ]
 
+  set listXcentroid [xcor] of centroids
+  set listYcentroid [ycor] of centroids
+  set listHeadingCentroid [heading] of centroids
+  set listPoidsCentroid [poids] of centroids
+  set listIdCentroid [idcentroid] of centroids
+end
 
+to color-swarm
+  foreach uniqueIdsSet
+  [
+    x -> let curId x
+    let colorSwarm  one-of (remove-item 0 base-colors)
+    let matchingTurtles birds with [id = curId]
+    if any? matchingTurtles
+    [ ask matchingTurtles[ set color colorSwarm ]]
+  ]
+end
 
 ;;; HELPER PROCEDURES
 
@@ -202,135 +250,24 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
   ifelse abs turn > max-turn
     [ ifelse turn > 0
         [ rt max-turn ]
-        [ lt max-turn ] ]
+        [ lt max-turn ]
+    ]
     [ rt turn ]
 end
 
-to detect-swarm
-  ask birds[
-  ;;create links between turtles based on a distance
-  ask other birds in-radius distanceSwarm [
-      if (heading > [heading] of myself - deltaDirection) and (heading < [heading] of myself + deltaDirection) [create-link-with myself] ; créez un lien entre l'agent en cours et chaque voisin
-    ]
-  ]
-
-
-
-  ask birds
+;; Swarm of swarm impact
+to swarm-turn [finalHeadings  finalId];;liste id centroids ;;liste headings ;; turn toward heading max angle
+  let totalId length finalId
+  foreach ( range 1 totalId)
   [
-    set id currentId
-    set currentId currentId + 1
-
+    u -> let indice u
+    let outHead item indice finalHeadings
+    let outId item indice finalId
+    let matchingBirds birds with [id = outId]
+    if any? matchingBirds
+    [ ask matchingBirds [turn-towards outHead max-swarm-turn] ]
   ]
-  let y 0
-  repeat 100
-  [
-
-
-    ask birds
-    [
-      let  myInLinkNeighbors in-link-neighbors
-      let my-id id
-      ask myInLinkNeighbors[
-        let N-id id
-        let min-id min list my-id N-id
-        set id min-id
-      ]
-    ]
-  ]
-
-
-
-
-
-
-
-
-
-
 end
-
-to count-unique-ids
-  set uniqueIdsSet (list)
-  ask birds [
-    if not member? id uniqueIdsSet [
-      set uniqueIdsSet fput id uniqueIdsSet
-    ]
-  ]
-  set nbId length uniqueIdsSet
-end
-
-to calculate-centroid
-  set listXcentroid []
-  set listYcentroid []
-  set listHeadingCentroid []
-
-  ask  centroids [
-    die
-  ]
-
-
-
-  foreach uniqueIdsSet [
-    x -> let curId x
-  let matchingBirds birds with [id = curId]
-  if any? matchingBirds [
-    let avgx mean [xcor] of matchingBirds
-    let avgy mean [ycor] of matchingBirds
-    let avgheadx mean [sin heading] of matchingBirds
-    let avgheady mean [cos heading] of matchingBirds
-
-
-    create-centroids 1 [
-      set shape "circle"
-      set color red
-      set size 1
-      set poids count matchingBirds
-      setxy avgx avgy
-      ifelse avgheadx = 0 and avgheady = 0
-    [   ]
-    [ set heading atan avgheadx avgheady ]
-    ]
-
-      ; Liste de centroids
-      ;set listXcentroid lput "hello" maListe
-
-
-
-  ]
-  ]
-  set listXcentroid [xcor] of centroids
-  set listYcentroid [ycor] of centroids
-  set listHeadingCentroid [heading] of centroids
-  set listPoidsCentroid [poids] of centroids
-  set listIdCentroid [idcentroid] of centroids
-end
-
-to color-swarm
-  foreach uniqueIdsSet [
-    x -> let curId x
-    let colorSwarm  one-of (remove-item 0 base-colors)
-    let matchingTurtles birds with [id = curId]
-    if any? matchingTurtles [
-      ask matchingTurtles[
-        set color colorSwarm
-
-      ]
-  ]]
-
-end
-
-
-
-
-
-
-
-
-
-
-; Copyright 1998 Uri Wilensky.
-; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
 250

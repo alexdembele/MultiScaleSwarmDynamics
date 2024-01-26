@@ -1,16 +1,20 @@
-extensions [ls]
+extensions [ls] ;; LevelSpace NetLogo extension
 
-turtles-own [
+turtles-own
+[
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
   weight
   id
 ]
 
+;;; MAIN
+
 to launch
   go
   tick
 end
+
 to setup
   ls:reset
   ca
@@ -32,7 +36,9 @@ to go
   let id_centroids [listIdCentroid] ls:of ls:models
   ;;show [ centroids ] ls:of ls:models
   let models ls:models
-  while [not empty? models] [
+
+  while [not empty? models]
+  [
     let id_world last models
     let number_centroid item id_world number_centroids
     let xcoords item id_world x_centroids
@@ -41,8 +47,10 @@ to go
     let Ids item id_world id_centroids
 
     let headings item id_world heading_centroids
-    while[number_centroid > 0] [
-      create-turtles 1 [
+    while[number_centroid > 0]
+    [
+      create-turtles 1
+      [
         set color 15 + 10 * id_world
         setxy last xcoords last ycoords
         set heading last headings
@@ -57,36 +65,42 @@ to go
       set number_centroid number_centroid - 1
     ]
     set models but-last models
-
   ]
 
-  ;;realisation du flocking
-  print(" debut flocking")
-  repeat 5 [
-  ask turtles [ flock ]
-  ;; the following line is used to make the turtles
-  ;; animate more smoothly.
-  repeat 5 [ ask turtles [ fd 0.2 ] display ]
-  ;; for greater efficiency, at the expense of smooth
-  ;; animation, substitute the following line instead:
-  ;;   ask turtles [ fd 1 ]
-  tick]
-  print(" fin flocking")
+  ;;realization of flocking
+  print("start flocking")
+  repeat 5
+  [
+    ask turtles [ flock ]
+    ;; the following line is used to make the turtles
+    ;; animate more smoothly.
+    repeat 5 [ ask turtles [ fd 0.2 ] display ]
+    ;; for greater efficiency, at the expense of smooth
+    ;; animation, substitute the following line instead:
+    ;;   ask turtles [ fd 1 ]
+    tick
+  ]
+
+  print("end flocking")
   ls:let Outheadings [heading] of turtles
   ls:let OutId [id] of turtles
   ls:ask ls:models [swarm-turn Outheadings OutId]
-
-
 end
+
+;;; SWARM RULES
 
 to flock  ;; turtle procedure
   find-flockmates
   if any? flockmates
-    [ find-nearest-neighbor
+    [
+      find-nearest-neighbor
       ifelse distance nearest-neighbor < minimum-separation
         [ separate ]
-        [ align
-          cohere ] ]
+        [
+          align
+          cohere
+        ]
+    ]
 end
 
 to find-flockmates  ;; turtle procedure
@@ -97,13 +111,9 @@ to find-nearest-neighbor ;; turtle procedure
   set nearest-neighbor min-one-of flockmates [distance myself]
 end
 
-;;; SEPARATE
-
 to separate  ;; turtle procedure
   turn-away ([heading] of nearest-neighbor) max-separate-turn
 end
-
-;;; ALIGN
 
 to align  ;; turtle procedure
   turn-towards average-flockmate-heading max-align-turn
@@ -119,8 +129,6 @@ to-report average-flockmate-heading  ;; turtle procedure
     [ report heading ]
     [ report atan x-component y-component ]
 end
-
-;;; COHERE
 
 to cohere  ;; turtle procedure
   turn-towards average-heading-towards-flockmates max-cohere-turn
@@ -151,9 +159,11 @@ end
 ;; but never turn more than "max-turn" degrees
 to turn-at-most [turn max-turn]  ;; turtle procedure
   ifelse abs turn > max-turn
-    [ ifelse turn > 0
+    [
+      ifelse turn > 0
         [ rt max-turn ]
-        [ lt max-turn ] ]
+        [ lt max-turn ]
+    ]
     [ rt turn ]
 end
 @#$#@#$#@
