@@ -1,10 +1,17 @@
 extensions [ls]
 
+
 turtles-own [
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
   weight
   id
+]
+
+globals
+[
+totalID
+  listNumber
 ]
 
 to launch
@@ -18,6 +25,7 @@ to setup
   ls:ask ls:models [ setup ]
   reset-ticks
   print("ticks supposedly reset")
+  set listNumber []
 end
 
 to go
@@ -30,8 +38,11 @@ to go
   let heading_centroids [ListHeadingCentroid] ls:of ls:models
   let poids_centroids [listPoidsCentroid] ls:of ls:models
   let id_centroids [listIdCentroid] ls:of ls:models
+
+
   ;;show [ centroids ] ls:of ls:models
   let models ls:models
+
   while [not empty? models] [
     let id_world last models
     let number_centroid item id_world number_centroids
@@ -60,8 +71,9 @@ to go
 
   ]
 
+
   ;;realisation du flocking
-  print(" debut flocking")
+
   repeat 5 [
   ask turtles [ flock ]
   ;; the following line is used to make the turtles
@@ -71,10 +83,13 @@ to go
   ;; animation, substitute the following line instead:
   ;;   ask turtles [ fd 1 ]
   tick]
-  print(" fin flocking")
+  set totalID count turtles
+  set listNumber lput totalId listNumber
+  set listNumber lput "," listNumber
+
   ls:let Outheadings [heading] of turtles
   ls:let OutId [id] of turtles
-  ls:ask ls:models [swarm-turn Outheadings OutId]
+  ;ls:ask ls:models [swarm-turn Outheadings OutId]
 
 
 end
@@ -155,6 +170,10 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
         [ rt max-turn ]
         [ lt max-turn ] ]
     [ rt turn ]
+end
+
+to print-list
+  print(listNumber)
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -300,7 +319,7 @@ max-cohere-turn
 max-cohere-turn
 0
 20
-3.0
+3.5
 0.25
 1
 degree
@@ -315,11 +334,46 @@ max-separate-turn
 max-separate-turn
 0
 20
-1.5
+3.0
 0.25
 1
 degree
 HORIZONTAL
+
+PLOT
+736
+155
+936
+305
+plot 1
+NIL
+NIL
+0.0
+1000.0
+0.0
+300.0
+true
+true
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot count turtles"
+
+BUTTON
+767
+80
+846
+113
+NIL
+print-list
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?

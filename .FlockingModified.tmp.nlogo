@@ -163,16 +163,15 @@ end
 ;; Swarm of swarm impact
 to swarm-turn [finalHeadings  finalId];;liste id centroids ;;liste headings ;; turn toward heading max angle
   let totalId length finalId
+
   foreach ( range 1 totalId) [
   u -> let  indice u
   let outHead item indice finalHeadings
     let outId item indice finalId
   let matchingBirds birds with [id = outId]
   if any? matchingBirds [
-      turn-towards outHead max-swarm-turn
 
-
-
+      ask matchingBirds [turn-towards outHead max-swarm-turn]
 ]
 
 
@@ -217,8 +216,6 @@ to detect-swarm
     ]
   ]
 
-
-
   ask birds
   [
     set id currentId
@@ -226,7 +223,7 @@ to detect-swarm
 
   ]
   let y 0
-  repeat 100
+  repeat 10
   [
 
 
@@ -290,6 +287,7 @@ to calculate-centroid
       set size 1
       set poids count matchingBirds
       setxy avgx avgy
+        set idcentroid curId
       ifelse avgheadx = 0 and avgheady = 0
     [   ]
     [ set heading atan avgheadx avgheady ]
@@ -465,7 +463,7 @@ vision
 vision
 0.0
 10.0
-6.0
+5.5
 0.5
 1
 patches
@@ -543,7 +541,7 @@ max-swarm-turn
 max-swarm-turn
 0
 20
-5.0
+3.0
 0.25
 1
 degree
