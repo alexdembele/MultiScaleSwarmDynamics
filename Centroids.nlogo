@@ -38,7 +38,7 @@ to go
   let heading_centroids [ListHeadingCentroid] ls:of ls:models
   let poids_centroids [listPoidsCentroid] ls:of ls:models
   let id_centroids [listIdCentroid] ls:of ls:models
-
+  show id_centroids
 
   ;;show [ centroids ] ls:of ls:models
   let models ls:models
@@ -59,12 +59,14 @@ to go
         set heading last headings
         set weight last poids
         set id last Ids
+
       ]
       ;this is a home made pop, equivalent to java pop
       set xcoords but-last xcoords
       set ycoords but-last ycoords
       set headings but-last headings
       set poids but-last poids
+      set Ids but-last Ids
       set number_centroid number_centroid - 1
     ]
     set models but-last models
@@ -89,7 +91,7 @@ to go
 
   ls:let Outheadings [heading] of turtles
   ls:let OutId [id] of turtles
-  ;ls:ask ls:models [swarm-turn Outheadings OutId]
+  ls:ask ls:models [swarm-turn Outheadings OutId]
 
 
 end

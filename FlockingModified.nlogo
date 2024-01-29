@@ -163,9 +163,10 @@ end
 ;; Swarm of swarm impact
 to swarm-turn [finalHeadings  finalId];;liste id centroids ;;liste headings ;; turn toward heading max angle
   let totalId length finalId
-
+  show finalId
   foreach ( range 1 totalId) [
   u -> let  indice u
+
   let outHead item indice finalHeadings
     let outId item indice finalId
   let matchingBirds birds with [id = outId]
