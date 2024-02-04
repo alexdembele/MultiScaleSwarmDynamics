@@ -71,7 +71,7 @@ to go
   ;;   ask turtles [ fd 1 ]
 
   ;Detection des swarms sur un nombre de step distincts
-  ifelse i < 5 ;;you can change this parameter
+  ifelse i < 5
   [set i i + 1]
   [clear-links ;clear all the swarm identifier to recompute the swarm detection
    ask birds [ set id -1 ];

@@ -1,46 +1,77 @@
-extensions [ls]
+extensions [ls
+           csv]
 
 
 turtles-own [
   flockmates         ;; agentset of nearby turtles
   nearest-neighbor   ;; closest one of our flockmates
-  weight
-  id
+  weight             ;; number of agent in the swarm
+  id                 ;; id of the swarm
 ]
 
 globals
-[
-totalID
-  listNumber
-]
+[csv
+totalID              ;; list of swarm ids
+  listNumber         ;; list of swarm number
 
-to launch
-  go
-  tick
+]
+to experiment        ;; use to make curve under 20 iterations
+
+  let listDelist []
+  let r  0
+  repeat 20
+  [setup
+    launch-test
+    set r r + 1
+    print(r)
+
+    set listDelist lput listNumber listDelist
+
+  ]
+
+  write-list-to-csv listDelist     ;;write data in file
 end
-to setup
+to write-list-to-csv [L]
+  ; Ouvrir le fichier CSV en mode écriture
+  csv:to-file "/data/multiscale.csv" L
+
+
+end
+to launch                  ;; infinite loop to run dynamics
+  go
+end
+
+to launch-test             ;; one iteration to conduct test, 2005 iterations correpond to 335 iterations in children models
+  while [ticks < 2005] [
+    go
+    tick
+  ]
+end
+to setup                   ;;  intialisation and creation of child instances
   ls:reset
   ca
   ls:create-interactive-models number_worlds "FlockingModified.nlogo"
   ls:ask ls:models [ setup ]
   reset-ticks
-  print("ticks supposedly reset")
+  ;print("ticks supposedly reset")
   set listNumber []
 end
 
-to go
+to go                      ;; execute one step of the child dynamiics
   clear-turtles
-  ls:ask ls:models [ go ]
-  let number_centroids [count centroids] ls:of ls:models
 
+
+  ls:ask ls:models [ go ]  ;; execute one step of the child dynamics
+
+  ;; get data from children
+  let number_centroids [count centroids] ls:of ls:models
   let x_centroids [ListXcentroid] ls:of ls:models
   let y_centroids [ListYcentroid] ls:of ls:models
   let heading_centroids [ListHeadingCentroid] ls:of ls:models
   let poids_centroids [listPoidsCentroid] ls:of ls:models
   let id_centroids [listIdCentroid] ls:of ls:models
-  show id_centroids
 
-  ;;show [ centroids ] ls:of ls:models
+
   let models ls:models
 
   while [not empty? models] [
@@ -50,23 +81,24 @@ to go
     let ycoords item id_world y_centroids
     let poids item id_world poids_centroids
     let Ids item id_world id_centroids
-
     let headings item id_world heading_centroids
-    while[number_centroid > 0] [
+
+
+    while[number_centroid > 0] [    ;;cretation of agents corresponding to centroids
       create-turtles 1 [
         set color 15 + 10 * id_world
         setxy last xcoords last ycoords
         set heading last headings
         set weight last poids
         set id last Ids
-        show id
+
       ]
       ;this is a home made pop, equivalent to java pop
       set xcoords but-last xcoords
       set ycoords but-last ycoords
       set headings but-last headings
       set poids but-last poids
-
+      set Ids but-last Ids
       set number_centroid number_centroid - 1
     ]
     set models but-last models
@@ -76,22 +108,18 @@ to go
 
   ;;realisation du flocking
 
-  repeat 5 [
+  repeat 5 [                 ;; You can change this parameters: number of step before givin
   ask turtles [ flock ]
-  ;; the following line is used to make the turtles
-  ;; animate more smoothly.
   repeat 5 [ ask turtles [ fd 0.2 ] display ]
-  ;; for greater efficiency, at the expense of smooth
-  ;; animation, substitute the following line instead:
-  ;;   ask turtles [ fd 1 ]
   tick]
-  set totalID count turtles
-  set listNumber lput totalId listNumber
-  set listNumber lput "," listNumber
 
+  ;;get data from parent model
+  set totalID count turtles      ;;
+  set listNumber lput totalId listNumber
   ls:let Outheadings [heading] of turtles
   ls:let OutId [id] of turtles
-  ls:ask ls:models [swarm-turn Outheadings OutId]
+  if feedback
+  [ls:ask ls:models [swarm-turn Outheadings OutId]] ;;provide children wih feedback
 
 
 end
@@ -174,7 +202,9 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
     [ rt turn ]
 end
 
-to print-list
+to print-list  ;; print data in console
+  clear-output
+
   print(listNumber)
 end
 @#$#@#$#@
@@ -275,8 +305,8 @@ SLIDER
 vision
 vision
 0
-10
-5.0
+40
+40.0
 0.5
 1
 patches
@@ -290,7 +320,7 @@ SLIDER
 minimum-separation
 minimum-separation
 0
-5
+10
 1.0
 0.25
 1
@@ -306,7 +336,7 @@ max-align-turn
 max-align-turn
 0
 20
-5.0
+1.0
 0.25
 1
 degree
@@ -321,7 +351,7 @@ max-cohere-turn
 max-cohere-turn
 0
 20
-3.5
+1.25
 0.25
 1
 degree
@@ -336,7 +366,7 @@ max-separate-turn
 max-separate-turn
 0
 20
-3.0
+2.0
 0.25
 1
 degree
@@ -376,6 +406,34 @@ NIL
 NIL
 NIL
 1
+
+BUTTON
+758
+10
+853
+43
+NIL
+experiment
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SWITCH
+687
+345
+792
+378
+feedback
+feedback
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

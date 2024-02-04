@@ -1,83 +1,183 @@
-turtles-own
+extensions [ls]
+
+
+turtles-own [
+  flockmates         ;; agentset of nearby turtles
+  nearest-neighbor   ;; closest one of our flockmates
+  weight
+  id
+]
+
+globals
 [
-  vx; velocity in the x direction
-  vy; velocity in the y direction
-
-
+totalID
+  listNumber
 ]
 
-globals [
-  barycentre  ; Agent qui représente le barycentre
-]
-
-
-
-to setup
-    clear-all
-    create-turtles 100
-    [
-      setxy random-xcor / 4 random-ycor / 4
-      set vx random-normal 0 1
-      set vy random-normal 0 1
-      set color yellow
-
-    ]
-
-  create-turtles 1 [
-  set shape "circle"  ; Forme pour représenter le barycentre
-  set color red
-  set size 3  ; Taille du cercle pour le barycentre
-  set barycentre self  ; Vous pouvez également attribuer un identifiant ou un nom pour référence ultérieure
-]
-  reset-ticks
+to launch
+  go
+  tick
 end
-
-to update-barycentre
-  if any? turtles [
-    let avg-x mean [xcor] of turtles
-    let avg-y mean [ycor] of turtles
-    ask barycentre [
-      setxy avg-x avg-y
-    ]
-  ]
+to setup
+  ls:reset
+  ca
+  ls:create-interactive-models number_worlds "FlockingModified.nlogo"
+  ls:ask ls:models [ setup ]
+  reset-ticks
+  print("ticks supposedly reset")
+  set listNumber []
 end
 
 to go
-  let avg-vx mean [vx] of turtles
-  let avg-vy mean [vy] of turtles
-  let globx mean [xcor] of turtles
-  let globy mean [ycor] of turtles
-  ask turtles
-  [
-    facexy globx globy
+  clear-turtles
+  ls:ask ls:models [ go ]
+  let number_centroids [count centroids] ls:of ls:models
 
-    let dist distancexy globx globy
+  let x_centroids [ListXcentroid] ls:of ls:models
+  let y_centroids [ListYcentroid] ls:of ls:models
+  let heading_centroids [ListHeadingCentroid] ls:of ls:models
+  let poids_centroids [listPoidsCentroid] ls:of ls:models
+  let id_centroids [listIdCentroid] ls:of ls:models
+  ;show id_centroids
 
+  ;;show [ centroids ] ls:of ls:models
+  let models ls:models
 
+  while [not empty? models] [
+    let id_world last models
+    let number_centroid item id_world number_centroids
+    let xcoords item id_world x_centroids
+    let ycoords item id_world y_centroids
+    let poids item id_world poids_centroids
+    let Ids item id_world id_centroids
 
-    set vx vx + (1 - 0.3) * alpha * (random-float 0.1) * dist * dx
-    set vy vy + (1 - 0.3) * alpha * (random-float 0.1) * dist * dy
+    let headings item id_world heading_centroids
+    while[number_centroid > 0] [
+      create-turtles 1 [
+        set color 15 + 10 * id_world
+        setxy last xcoords last ycoords
+        set heading last headings
+        set weight last poids
+        set id last Ids
 
+      ]
+      ;this is a home made pop, equivalent to java pop
+      set xcoords but-last xcoords
+      set ycoords but-last ycoords
+      set headings but-last headings
+      set poids but-last poids
+      set Ids but-last Ids
+      set number_centroid number_centroid - 1
+    ]
+    set models but-last models
 
-
-
-
-
-
-    ; same speed is not enough, to form swarm, they need to go to a pseudo center of swarm
-
-
-    ;set vx  vx + 0.3 * avg-vx + Alpha * random-normal 0 0.5
-    ;set vy  vy + 0.3 * avg-vy + Alpha * random-normal 0 0.5
-
-  ; face in the direction of my velocity
-    facexy (xcor + vx) (ycor + vy)
-    ; and move forward by the magnitude of my velocity
-    forward sqrt (vx * vx + vy * vy)
   ]
 
-  update-barycentre
-  tick
+
+  ;;realisation du flocking
+
+  repeat 5 [
+  ask turtles [ flock ]
+  ;; the following line is used to make the turtles
+  ;; animate more smoothly.
+  repeat 5 [ ask turtles [ fd 0.2 ] display ]
+  ;; for greater efficiency, at the expense of smooth
+  ;; animation, substitute the following line instead:
+  ;;   ask turtles [ fd 1 ]
+  tick]
+  set totalID count turtles
+  set listNumber lput totalId listNumber
+  set listNumber lput "," listNumber
+
+  ls:let Outheadings [heading] of turtles
+  ls:let OutId [id] of turtles
+  ls:ask ls:models [swarm-turn Outheadings OutId]
+
+
+end
+
+to flock  ;; turtle procedure
+  find-flockmates
+  if any? flockmates
+    [ find-nearest-neighbor
+      ifelse distance nearest-neighbor < minimum-separation
+        [ separate ]
+        [ align
+          cohere ] ]
+end
+
+to find-flockmates  ;; turtle procedure
+  set flockmates other turtles in-radius vision
+end
+
+to find-nearest-neighbor ;; turtle procedure
+  set nearest-neighbor min-one-of flockmates [distance myself]
+end
+
+;;; SEPARATE
+
+to separate  ;; turtle procedure
+  turn-away ([heading] of nearest-neighbor) max-separate-turn
+end
+
+;;; ALIGN
+
+to align  ;; turtle procedure
+  turn-towards average-flockmate-heading max-align-turn * ([weight] of nearest-neighbor) / weight
+end
+
+to-report average-flockmate-heading  ;; turtle procedure
+  ;; We can't just average the heading variables here.
+  ;; For example, the average of 1 and 359 should be 0,
+  ;; not 180.  So we have to use trigonometry.
+  let x-component sum [dx] of flockmates
+  let y-component sum [dy] of flockmates
+  ifelse x-component = 0 and y-component = 0
+    [ report heading ]
+    [ report atan x-component y-component ]
+end
+
+;;; COHERE
+
+to cohere  ;; turtle procedure
+  turn-towards average-heading-towards-flockmates max-cohere-turn * ([weight] of nearest-neighbor) / weight
+
+
+end
+
+to-report average-heading-towards-flockmates  ;; turtle procedure
+  ;; "towards myself" gives us the heading from the other turtle
+  ;; to me, but we want the heading from me to the other turtle,
+  ;; so we add 180
+  let x-component mean [sin (towards myself + 180)] of flockmates
+  let y-component mean [cos (towards myself + 180)] of flockmates
+  ifelse x-component = 0 and y-component = 0
+    [ report heading ]
+    [ report atan x-component y-component ]
+end
+
+;;; HELPER PROCEDURES
+
+to turn-towards [new-heading max-turn]  ;; turtle procedure
+  turn-at-most (subtract-headings new-heading heading) max-turn
+end
+
+to turn-away [new-heading max-turn]  ;; turtle procedure
+  turn-at-most (subtract-headings heading new-heading) max-turn
+end
+
+;; turn right by "turn" degrees (or left if "turn" is negative),
+;; but never turn more than "max-turn" degrees
+to turn-at-most [turn max-turn]  ;; turtle procedure
+  ifelse abs turn > max-turn
+    [ ifelse turn > 0
+        [ rt max-turn ]
+        [ lt max-turn ] ]
+    [ rt turn ]
+end
+
+to print-list
+  print(listNumber)
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -101,20 +201,20 @@ GRAPHICS-WINDOW
 16
 -16
 16
-0
-0
+1
+1
 1
 ticks
 30.0
 
 BUTTON
-83
-92
-146
-125
+21
+53
+94
+86
 NIL
-go
-T
+setup
+NIL
 1
 T
 OBSERVER
@@ -125,13 +225,41 @@ NIL
 1
 
 BUTTON
-83
-51
-146
-84
+123
+54
+186
+87
 NIL
-setup\n
+go
 NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
+
+INPUTBOX
+22
+99
+183
+159
+number_worlds
+1.0
+1
+0
+Number
+
+BUTTON
+65
+10
+145
+43
+NIL
+launch
+T
 1
 T
 OBSERVER
@@ -141,34 +269,115 @@ NIL
 NIL
 1
 
-INPUTBOX
-26
+SLIDER
+17
+172
+189
 205
-181
-265
-Alpha
-1.0
-1
+vision
+vision
 0
-Number
+40
+40.0
+0.5
+1
+patches
+HORIZONTAL
+
+SLIDER
+0
+214
+191
+247
+minimum-separation
+minimum-separation
+0
+5
+2.5
+0.25
+1
+patches
+HORIZONTAL
+
+SLIDER
+17
+277
+197
+310
+max-align-turn
+max-align-turn
+0
+20
+4.75
+0.25
+1
+degree
+HORIZONTAL
+
+SLIDER
+7
+315
+205
+348
+max-cohere-turn
+max-cohere-turn
+0
+20
+2.5
+0.25
+1
+degree
+HORIZONTAL
+
+SLIDER
+4
+356
+202
+389
+max-separate-turn
+max-separate-turn
+0
+20
+1.5
+0.25
+1
+degree
+HORIZONTAL
 
 PLOT
-776
-117
-976
-267
+736
+155
+936
+305
 plot 1
 NIL
 NIL
 0.0
-1.0
+1000.0
 0.0
-1.0
+300.0
 true
-false
+true
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot mean [vx] of turtles"
+"default" 1.0 0 -16777216 true "" "plot count turtles"
+
+BUTTON
+767
+80
+846
+113
+NIL
+print-list
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
