@@ -33,7 +33,7 @@ to experiment        ;; use to make curve under 20 iterations
 end
 to write-list-to-csv [L]
   ; Ouvrir le fichier CSV en mode écriture
-  csv:to-file "/data/multiscale.csv" L   ;; you can change this parameter : file in which data will be written during experiment
+  csv:to-file "/data/test.csv" L   ;; you can change this parameter : file in which data will be written during experiment
 
 
 end
@@ -46,6 +46,7 @@ to launch-test             ;; one iteration to conduct test, 2005 iterations cor
     go
     tick
   ]
+  show variance [weight] of turtles
 end
 to setup                   ;;  intialisation and creation of child instances
   ls:reset
